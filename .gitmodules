@@ -1,0 +1,6 @@
+[submodule "libs/!cpp"]
+	path = libs/!cpp
+	url = git://github.com/bga/_cpp
+[submodule "libs/libopencm3"]
+	path = libs/libopencm3
+	url = https://github.com/libopencm3/libopencm3

@@ -1,0 +1,71 @@
+##
+## This file is part of the libopencm3 project.
+##
+## This library is free software: you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## This library is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with this library.  If not, see <http://www.gnu.org/licenses/>.
+##
+
+TEMP ?= /tmp
+
+space :=
+space +=
+pathToName = $(subst /,_,$(subst $(space),-,$1))
+
+SELF_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+PROJECT = $(call pathToName,$(dir $(SELF_PATH)))
+
+TARGET_EXEC ?= $(PROJECT)
+
+BOARD = stm32f103-generic
+DEVICE = stm32f103x8
+ARCH ?= arm
+PLATFORM ?= $(BOARD)
+
+
+BUILD_DIR ?= $(TEMP)/$(PROJECT)
+SRC_DIRS ?= ./src ./shared
+
+
+SHARED_DIR = ./shared
+
+CFILES += $(shell find $(SRC_DIRS) -name '*.c' | grep -Fv '.bak.')
+CXXFILES += $(shell find $(SRC_DIRS) -name '*.cxx' | grep -Fv '.bak.')
+
+CPPFLAGS += -Wall -Wextra -Wcast-qual -Werror=sign-conversion 
+CPPFLAGS += -Wno-unused-variable -Wno-unused-parameter -Wno-expansion-to-defined
+CPPFLAGS += -Iinclude -Ilibs/!cpp/include
+CPPFLAGS += -fdollars-in-identifiers
+CPPFLAGS += -fno-exceptions
+
+
+VPATH += $(SHARED_DIR)
+
+INCLUDES += $(patsubst %,-I%, . $(SHARED_DIR))
+
+OPENCM3_DIR=./libs/libopencm3
+
+### This section can go to an arch shared rules eventually...
+OOCD_FILE = openocd.$(BOARD).cfg
+
+include $(OPENCM3_DIR)/mk/genlink-config.mk
+include $(OPENCM3_DIR)/mk/genlink-rules.mk
+include ./rules.mk
+
+
+# [https://stackoverflow.com/a/26339924]
+list:
+	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$'
+
+# debugging make
+print-%:
+	@echo "$*" = "$($*)"
